@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ConverterArquivos — Conversor Universal 100% Local</title>
+  <meta name="description" content="Converta imagens, áudios e vídeos diretamente no seu navegador, sem enviar arquivos para servidores externos. Processamento 100% local.">
+
+  <!-- COI Service Worker para SharedArrayBuffer (FFmpeg) -->
+  <script src="assets/js/coi-serviceworker.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="assets/css/styles.css?v=3">
+</head>
+<body>
+
+  <!-- Ambient Glow Blobs -->
+  <div class="ambient-background">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+    <div class="blob blob-3"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <a href="#" class="logo">
+        <div class="logo-icon">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </div>
+        <span class="logo-text">Converter<span class="gradient-text">Arquivos</span></span>
+        <span class="logo-tag">Motor Local</span>
+      </a>
+
+      <div class="header-badges">
+        <div class="badge-pill status-ready">
+          <span class="status-dot"></span>
+          <span>Motor Local Ativo</span>
+        </div>
+        <div class="badge-pill">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+            <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+            <line x1="12" y1="20" x2="12.01" y2="20"></line>
+          </svg>
+          <span>Funciona Offline</span>
+        </div>
+        <div class="badge-pill">
+          <span>🔒 100% Privado</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <h1 class="hero-title">
+        Converta <span class="gradient-text">qualquer arquivo</span><br>
+        com Máxima Qualidade & Velocidade
+      </h1>
+      <p class="hero-subtitle">
+        Todo o processamento é feito <strong>diretamente no seu processador</strong> via HTML5 Canvas. 
+        Zero consumo de servidor e seus vídeos nunca saem do seu computador.
+      </p>
+    </section>
+
+    <!-- Main Converter Card -->
+    <main class="converter-card" id="converterCard">
+      
+      <!-- Upload Dropzone (Initial State) -->
+      <section class="initial-upload-section" id="initialUploadSection">
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="fileInput" accept="*/*" style="display: none;">
+          
+          <div class="dropzone-content">
+            <div class="dropzone-icon-wrap">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            </div>
+            
+            <div>
+              <h3 class="dropzone-title">Arraste e solte o seu arquivo aqui</h3>
+              <p class="dropzone-desc">ou clique no botão abaixo para escolher do seu dispositivo</p>
+            </div>
+
+            <button type="button" class="btn-select">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                <line x1="7" y1="2" x2="7" y2="22"></line>
+                <line x1="17" y1="2" x2="17" y2="22"></line>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+              </svg>
+              Selecionar Arquivo
+            </button>
+
+            <div class="dropzone-hints">
+              <span class="hint-item">✨ Suporta Imagens, Áudios e Vídeos</span>
+              <span class="hint-item">🛡️ Processamento no navegador</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Format Selection Section -->
+      <section class="format-selection-section" id="formatSelectionSection" style="display: none;">
+        <div class="video-info-header">
+          <div class="video-meta-group">
+            <div id="detectedTypeIcon" class="type-icon-mini">📄</div>
+            <div class="video-details">
+              <span class="video-filename" id="detectedFilename">arquivo.xyz</span>
+              <div class="video-specs" id="detectedSpecs">Detectando formato...</div>
+            </div>
+          </div>
+
+          <button type="button" class="btn-remove-file" id="btnCancelFormatSelection">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Cancelar
+          </button>
+        </div>
+        
+        <div class="format-selection-body">
+          <h3 class="section-heading">Escolha o formato de conversão</h3>
+          <p class="section-subheading">Estes são os formatos compatíveis com o seu arquivo original.</p>
+          <div class="format-search-wrap">
+            <svg class="search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="formatSearchInput" class="format-search-input" placeholder="Pesquisar formato (ex: png, mp3, gif)...">
+          </div>
+          <div class="format-grid" id="formatGrid">
+            <!-- Format buttons will be injected here dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Active File & Editor Section (Loaded State) -->
+      <section class="file-active-section" id="fileActiveSection" style="display: none;">
+        
+        <!-- Video Header Info Bar -->
+        <div class="video-info-header">
+          <div class="video-meta-group">
+            <img id="videoThumbMini" class="video-thumb-mini" alt="Miniatura">
+            <div class="video-details">
+              <span class="video-filename" id="videoFilename">video.mp4</span>
+              <div class="video-specs" id="videoSpecs">
+                <!-- Filled dynamically by JS -->
+              </div>
+            </div>
+          </div>
+
+          <button type="button" class="btn-remove-file" id="btnRemoveFile">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+            Trocar Vídeo
+          </button>
+        </div>
+
+        <!-- Video Player & Trimmer -->
+        <div class="preview-layout">
+          <div class="video-preview-wrapper">
+            <video id="previewVideo" class="preview-video" controls playsinline muted></video>
+            
+            <!-- Trimmer Controller -->
+            <div class="trimmer-bar">
+              <div class="trimmer-title-row">
+                <span>✂️ Faixa de Corte (Início e Fim do GIF)</span>
+                <span id="videoTotalDurationText">Duração: 0s</span>
+              </div>
+              <div class="trimmer-range-inputs">
+                <div class="trim-input-group">
+                  <label for="trimStartInput">Ponto Inicial</label>
+                  <div class="time-box">
+                    <input type="number" id="trimStartInput" min="0" step="0.1" value="0">
+                    <span class="time-unit">segundos</span>
+                  </div>
+                </div>
+                <div class="trim-input-group">
+                  <label for="trimEndInput">Ponto Final</label>
+                  <div class="time-box">
+                    <input type="number" id="trimEndInput" min="0.1" step="0.1" value="5">
+                    <span class="time-unit">segundos</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conversion Modes Selection -->
+        <div class="modes-container">
+          <div class="modes-label">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+            Escolha o Modo de Conversão
+          </div>
+
+          <div class="mode-tabs">
+            <!-- Mode 1: Basic -->
+            <button type="button" class="mode-tab" data-mode="basic">
+              <div class="mode-tab-title">
+                <span>Conversão Básica</span>
+              </div>
+              <p class="mode-tab-desc">Mantém qualidade e resolução originais. Ideal quando nitidez visual é prioridade.</p>
+            </button>
+
+            <!-- Mode 2: Auto-Compress (Default) -->
+            <button type="button" class="mode-tab active" data-mode="auto">
+              <div class="mode-tab-title">
+                <span>Compressão Auto</span>
+                <span class="mode-badge">Recomendado</span>
+              </div>
+              <p class="mode-tab-desc">Reduz o tamanho em até 70% com paleta inteligente, mantendo visual limpo.</p>
+            </button>
+
+            <!-- Mode 3: Advanced -->
+            <button type="button" class="mode-tab" data-mode="advanced">
+              <div class="mode-tab-title">
+                <span>Modo Avançado</span>
+              </div>
+              <p class="mode-tab-desc">Tamanho em MB alvo, resolução customizada, taxa de FPS e controle de cores.</p>
+            </button>
+          </div>
+        </div>
+
+        <!-- Advanced Mode Settings Panel (Shown only when 'advanced' mode is active) -->
+        <div class="settings-panel" id="advancedSettingsPanel">
+          <div class="settings-grid">
+            
+            <!-- Target Size Heuristic Highlight -->
+            <div class="target-size-highlight">
+              <div class="target-size-info">
+                <div class="target-size-title">
+                  <span>🎯 Meta de Tamanho Aproximado (MB)</span>
+                </div>
+                <p class="target-size-sub">
+                  O sistema calculará automaticamente os melhores ajustes para aproximar o GIF ao peso desejado.
+                </p>
+              </div>
+              <div class="target-size-input-wrap">
+                <input type="number" id="targetSizeInput" class="custom-input" placeholder="Ex: 3" min="0.5" step="0.5">
+                <span style="font-weight: 700; color: var(--text-muted);">MB</span>
+              </div>
+            </div>
+
+            <!-- Resolution Preset -->
+            <div class="form-group">
+              <label class="form-label" for="resolutionPreset">
+                <span>Dimensões do GIF</span>
+              </label>
+              <select id="resolutionPreset" class="custom-select">
+                <option value="original">Original (Manter)</option>
+                <option value="1080p">1080p (Full HD - Max 1920px)</option>
+                <option value="720p">720p (HD - Max 1280px)</option>
+                <option value="480p">480p (Padrão - Max 854px)</option>
+                <option value="360p">360p (Leve - Max 640px)</option>
+                <option value="240p">240p (Super Leve - Max 426px)</option>
+                <option value="custom">Personalizado (W x H)</option>
+              </select>
+            </div>
+
+            <!-- Custom Dimensions (Hidden by default) -->
+            <div class="form-group" id="customDimGroup" style="display: none;">
+              <label class="form-label">Largura x Altura</label>
+              <div class="dim-inputs">
+                <input type="number" id="customWidthInput" class="custom-input" placeholder="Largura (px)">
+                <span>x</span>
+                <input type="number" id="customHeightInput" class="custom-input" placeholder="Altura (px)">
+              </div>
+            </div>
+
+            <!-- FPS Slider -->
+            <div class="form-group slider-group">
+              <div class="form-label">
+                <span>Taxa de Quadros (FPS)</span>
+                <span class="form-label-badge" id="fpsValueBadge">15 FPS</span>
+              </div>
+              <input type="range" id="fpsSlider" class="range-slider" min="8" max="30" step="1" value="15">
+            </div>
+
+            <!-- Color Palette Depth -->
+            <div class="form-group">
+              <label class="form-label" for="colorsSelect">
+                <span>Paleta de Cores</span>
+              </label>
+              <select id="colorsSelect" class="custom-select">
+                <option value="256">256 Cores (Máxima Nitidez)</option>
+                <option value="128" selected>128 Cores (Equilibrado)</option>
+                <option value="64">64 Cores (Muito Leve)</option>
+                <option value="32">32 Cores (Ultra Comprimido)</option>
+              </select>
+            </div>
+
+            <!-- Dithering Algorithm -->
+            <div class="form-group">
+              <label class="form-label" for="ditherSelect">
+                <span>Algoritmo de Dither</span>
+              </label>
+              <select id="ditherSelect" class="custom-select">
+                <option value="bayer" selected>Bayer (Otimizado e Sem Ruído)</option>
+                <option value="floyd_steinberg">Floyd-Steinberg (Alta Suavidade)</option>
+                <option value="sierra2_4a">Sierra (Gradientes Finos)</option>
+                <option value="none">Nenhum (Tamanho Menor)</option>
+              </select>
+            </div>
+
+            <!-- Playback Speed -->
+            <div class="form-group">
+              <label class="form-label" for="speedSelect">
+                <span>Velocidade de Reprodução</span>
+              </label>
+              <select id="speedSelect" class="custom-select">
+                <option value="0.75">0.75x (Câmera Lenta)</option>
+                <option value="1.0" selected>1.0x (Normal)</option>
+                <option value="1.25">1.25x (Mais Rápido)</option>
+                <option value="1.5">1.5x (Acelerado)</option>
+                <option value="2.0">2.0x (Ultra Rápido)</option>
+              </select>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Conversion Action Button -->
+        <div class="convert-action-wrap">
+          <button type="button" class="btn-convert-primary" id="btnConvert">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+            Converter para GIF Agora
+          </button>
+          <div class="action-notice">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            O processamento consome sua CPU local. O tempo depende do tamanho do vídeo.
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Processing State (Loading) -->
+      <section class="processing-section" id="processingSection">
+        <div class="loader-spinner"></div>
+        <h3 class="processing-title">Gerando o seu GIF...</h3>
+        <p class="processing-step" id="processingStep">Iniciando motor local...</p>
+        
+        <div class="progress-track">
+          <div class="progress-bar-fill" id="progressBarFill"></div>
+        </div>
+        <div class="progress-percent" id="progressPercent">0%</div>
+
+        <p class="processing-tip">💡 Dica: Você pode manter esta aba aberta enquanto o processamento local finaliza.</p>
+      </section>
+
+      <!-- Result / Download Section -->
+      <section class="result-section" id="resultSection">
+        
+        <div class="success-banner">
+          <div class="success-text-group">
+            <div class="success-icon">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <div>
+              <h4 class="success-title" id="resultSuccessTitle">Arquivo Criado com Sucesso!</h4>
+              <p class="success-desc" id="resultSuccessDesc">Seu arquivo foi gerado localmente e está pronto para uso.</p>
+            </div>
+          </div>
+          <span class="savings-badge" id="savingsBadge">-65% menor</span>
+        </div>
+
+        <div class="comparison-grid">
+          <!-- Result Preview -->
+          <div class="comparison-box">
+            <div class="comparison-box-title">
+              <span id="resultCardTitle">✨ Arquivo Convertido</span>
+              <span id="gifFileSizeBadge" style="color: var(--success); font-weight: 800;">0 MB</span>
+            </div>
+            <div class="comparison-media-wrap" id="resultMediaWrap">
+              <img id="resultGifImg" alt="Resultado">
+            </div>
+            <div class="comparison-stat-row">
+              <span>Formato: <strong id="resultFormatBadge">Pronto</strong></span>
+              <span>Processamento: <strong>100% Local</strong></span>
+            </div>
+          </div>
+
+          <!-- Original Specs reference -->
+          <div class="comparison-box">
+            <div class="comparison-box-title">
+              <span id="origCardTitle">📁 Arquivo Original</span>
+              <span id="origFileSizeBadge" style="color: var(--text-muted); font-weight: 700;">0 MB</span>
+            </div>
+            <div class="comparison-media-wrap" id="origMediaWrap" style="background: rgba(0,0,0,0.5);">
+              <div id="origMediaPlaceholder" style="text-align: center; color: var(--text-dim); padding: 20px;">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="margin-bottom: 8px;">
+                  <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+                  <line x1="7" y1="2" x2="7" y2="22"></line>
+                  <line x1="17" y1="2" x2="17" y2="22"></line>
+                </svg>
+                <p id="origFileTypeLabel">Arquivo Original</p>
+              </div>
+            </div>
+            <div class="comparison-stat-row">
+              <span>Dimensões: <strong id="origDimensionsBadge">0x0</strong></span>
+              <span>Status: <strong>Preservado</strong></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Result Action Buttons -->
+        <div class="result-actions-grid">
+          <a id="btnDownloadGif" class="btn-download-gif" href="#" download="convertido">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span id="btnDownloadText">Baixar Arquivo Agora</span>
+          </a>
+
+          <button type="button" class="btn-secondary-action" id="btnCopyGif">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+            <span id="btnCopyText">Copiar</span>
+          </button>
+
+          <button type="button" class="btn-secondary-action" id="btnNewConversion">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="1 4 1 10 7 10"></polyline>
+              <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+            </svg>
+            Novo Arquivo
+          </button>
+        </div>
+
+      </section>
+
+    </main>
+
+
+    <!-- Features Info Grid -->
+    <section class="features-grid">
+      <div class="feature-box">
+        <div class="feature-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
+            <rect x="9" y="9" width="6" height="6"></rect>
+            <line x1="9" y1="1" x2="9" y2="4"></line>
+            <line x1="15" y1="1" x2="15" y2="4"></line>
+            <line x1="9" y1="20" x2="9" y2="23"></line>
+            <line x1="15" y1="20" x2="15" y2="23"></line>
+            <line x1="20" y1="9" x2="23" y2="9"></line>
+            <line x1="20" y1="14" x2="23" y2="14"></line>
+            <line x1="1" y1="9" x2="4" y2="9"></line>
+            <line x1="1" y1="14" x2="4" y2="14"></line>
+          </svg>
+        </div>
+        <h3 class="feature-title">Processador do Usuário</h3>
+        <p class="feature-desc">Utiliza a CPU do seu computador via HTML5 Canvas para converter sem sobrecarregar nenhum servidor web.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+          </svg>
+        </div>
+        <h3 class="feature-title">100% Seguro & Privado</h3>
+        <p class="feature-desc">Nenhum byte de vídeo é enviado para a nuvem. Seus arquivos ficam exclusivamente na memória do seu navegador.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="1" y1="1" x2="23" y2="23"></line>
+            <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path>
+            <path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path>
+            <path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path>
+            <path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path>
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path>
+            <line x1="12" y1="20" x2="12.01" y2="20"></line>
+          </svg>
+        </div>
+        <h3 class="feature-title">Funciona 100% Offline</h3>
+        <p class="feature-desc">Não depende de internet. Uma vez carregado, converta seus vídeos mesmo sem conexão Wi-Fi ou sinal de rede.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polygon points="10 8 16 12 10 16 10 8"></polygon>
+          </svg>
+        </div>
+        <h3 class="feature-title">Compressão & Paleta</h3>
+        <p class="feature-desc">Filtros de ponta para gerar arquivos com cores fiéis, sem manchas e com tamanho reduzido.</p>
+      </div>
+
+      <div class="feature-box">
+        <div class="feature-icon-wrap">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <path d="M10 13l2 2 4-4"></path>
+          </svg>
+        </div>
+        <h3 class="feature-title">Arquivos Compatíveis</h3>
+        <p class="feature-desc">Converta qualquer arquivo compatível suportado de forma rápida, preservando a fidelidade e nitidez visual.</p>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Local Standalone Engine Libraries (No CDN, 100% Offline Compatible) -->
+  <script src="assets/js/jspdf.umd.min.js"></script>
+  <script src="assets/js/gifshot.min.js?v=2"></script>
+  <script src="assets/js/ffmpeg/ffmpeg.js"></script>
+  <script src="assets/js/converter.js?v=4"></script>
+  <script src="assets/js/app.js?v=4"></script>
+</body>
+</html>
